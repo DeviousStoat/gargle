@@ -27,3 +27,12 @@ class Applicative(t.Protocol[ValueT]):
         func: Applicative[t.Callable[[ValueT], OutT]],
     ) -> Applicative[OutT]:
         ...
+
+
+@t.runtime_checkable
+class Monad(t.Protocol[ValueT]):
+    def bind(
+        self: Monad[ValueT],
+        func: t.Callable[[ValueT], Monad[OutT]],
+    ) -> Monad[OutT]:
+        ...

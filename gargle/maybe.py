@@ -9,8 +9,8 @@ __all__ = (
     "Maybe",
     "Nothing",
     "Some",
-    "from_maybe",
     "as_maybe",
+    "from_maybe",
 )
 
 
@@ -18,6 +18,14 @@ class _MaybeInternal(t.Generic[ValueT]):
     """
     Internal class gathering common methods for the maybe classes.
     """
+
+    @t.overload
+    def from_maybe(self, default: ValueT) -> ValueT:
+        ...
+
+    @t.overload
+    def from_maybe(self, default: ValueT | None = None) -> ValueT | None:
+        ...
 
     def from_maybe(self, default: ValueT | None = None) -> ValueT | None:
         return from_maybe(t.cast(Maybe[ValueT], self), default)
@@ -31,17 +39,49 @@ class Some(_MaybeInternal[ValueT]):
     def value(self) -> ValueT:
         return self._value
 
-    def map(self, func: t.Callable[[ValueT], OutT]) -> Some[OutT]:
+    def map(self, func: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
         return Some(func(self.value))
+
+    def apply(self, func: Maybe[t.Callable[[ValueT], OutT]]) -> Maybe[OutT]:
+        match func:
+            case Some(f):
+                return self.map(f)
+            case Nothing():
+                return Nothing()
+
+    def bind(self, func: t.Callable[[ValueT], Maybe[OutT]]) -> Maybe[OutT]:
+        return func(self.value)
 
 
 @dataclass(frozen=True)
-class Nothing(_MaybeInternal[None]):
-    def map(self, _: t.Callable[[t.Any], t.Any]) -> Nothing:
+class Nothing(_MaybeInternal[ValueT]):
+    def map(self, _: t.Callable[[ValueT], t.Any]) -> Maybe[ValueT]:
+        return Nothing()
+
+    def apply(self, _: Maybe[t.Callable[[ValueT], t.Any]]) -> Maybe[ValueT]:
+        return Nothing()
+
+    def bind(self, _: t.Callable[[ValueT], Maybe[t.Any]]) -> Maybe[ValueT]:
         return Nothing()
 
 
-Maybe = Some[ValueT] | Nothing
+Maybe = Some[ValueT] | Nothing[ValueT]
+
+
+@t.overload
+def from_maybe(
+    maybe_value: Maybe[ValueT],
+    default: ValueT,
+) -> ValueT:
+    ...
+
+
+@t.overload
+def from_maybe(
+    maybe_value: Maybe[ValueT],
+    default: ValueT | None = None,
+) -> ValueT | None:
+    ...
 
 
 def from_maybe(
