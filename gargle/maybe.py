@@ -16,6 +16,10 @@ __all__ = (
 )
 
 
+T = t.TypeVar("T")
+T2 = t.TypeVar("T2")
+
+
 class _MaybeInternal(t.Generic[ValueT]):
     """
     Internal class gathering common methods for the maybe classes.
@@ -63,6 +67,20 @@ class Some(_MaybeInternal[ValueT]):
     def bind_opt(self, func: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
         return as_maybe(func(self.value))
 
+    @t.overload
+    def get(self: Maybe[list[T]], key: int) -> Maybe[T]:
+        ...
+
+    @t.overload
+    def get(self: Maybe[dict[T, T2]], key: T) -> Maybe[T2]:
+        ...
+
+    def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
+        try:
+            return self.map(lambda v: v[key])
+        except (IndexError, KeyError):
+            return Nothing()
+
 
 @dataclass(frozen=True)
 class Nothing(_MaybeInternal[ValueT]):
@@ -76,6 +94,17 @@ class Nothing(_MaybeInternal[ValueT]):
         return Nothing()
 
     def bind_opt(self, _: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
+        return Nothing()
+
+    @t.overload
+    def get(self: Maybe[list[T]], key: int) -> Maybe[T]:
+        ...
+
+    @t.overload
+    def get(self: Maybe[dict[T, T2]], key: T) -> Maybe[T2]:
+        ...
+
+    def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
         return Nothing()
 
 
@@ -124,3 +153,20 @@ def is_nothing(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Nothing[ValueT]]:
 
 def is_some(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Some[ValueT]]:
     return maybe_value.is_some()
+
+
+@t.overload
+def maybe_get(some_seq: dict[T, T2], key: T) -> Maybe[T2]:
+    ...
+
+
+@t.overload
+def maybe_get(some_seq: list[T], key: int) -> Maybe[T]:
+    ...
+
+
+def maybe_get(some_seq: t.Any, key: t.Any) -> Maybe[T] | Maybe[T2]:
+    try:
+        return Some(some_seq[key])
+    except (KeyError, IndexError):
+        return Nothing()

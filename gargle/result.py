@@ -1,6 +1,8 @@
 from __future__ import annotations
-import typing as t
 from dataclasses import dataclass
+import functools
+import typing as t
+
 from gargle.typeclasses import OutT
 
 
@@ -9,10 +11,13 @@ __all__ = (
     "Ok",
     "Result",
     "either",
+    "safe",
 )
 
 OkT = t.TypeVar("OkT")
 ErrT = t.TypeVar("ErrT")
+
+P = t.ParamSpec("P")
 
 
 class _ResultInternal(t.Generic[OkT, ErrT]):
@@ -86,3 +91,14 @@ def either(
             return ok_func(val)
         case Err(err):
             return err_func(err)
+
+
+def safe(func: t.Callable[P, OutT]) -> t.Callable[P, Result[OutT, Exception]]:
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Result[OutT, Exception]:
+        try:
+            return Ok(func(*args, **kwargs))
+        except Exception as exc:
+            return Err(exc)
+
+    return wrapper
