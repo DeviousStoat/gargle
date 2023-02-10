@@ -1,9 +1,9 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import typing as t
+from dataclasses import dataclass
 
 from gargle.typeclasses import OutT, ValueT
-
 
 __all__ = (
     "Maybe",
@@ -47,12 +47,8 @@ class _MaybeInternal(t.Generic[ValueT]):
 class Some(_MaybeInternal[ValueT]):
     _value: ValueT
 
-    @property
-    def value(self) -> ValueT:
-        return self._value
-
     def map(self, func: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
-        return Some(func(self.value))
+        return Some(func(self._value))
 
     def apply(self, func: Maybe[t.Callable[[ValueT], OutT]]) -> Maybe[OutT]:
         match func:
@@ -61,11 +57,11 @@ class Some(_MaybeInternal[ValueT]):
             case Nothing():
                 return Nothing()
 
-    def bind(self, func: t.Callable[[ValueT], Maybe[OutT]]) -> Maybe[OutT]:
-        return func(self.value)
+    def and_then(self, func: t.Callable[[ValueT], Maybe[OutT]]) -> Maybe[OutT]:
+        return func(self._value)
 
-    def bind_opt(self, func: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
-        return as_maybe(func(self.value))
+    def and_then_opt(self, func: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
+        return as_maybe(func(self._value))
 
     @t.overload
     def get(self: Maybe[list[T]], key: int) -> Maybe[T]:
@@ -78,22 +74,41 @@ class Some(_MaybeInternal[ValueT]):
     def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
         try:
             return self.map(lambda v: v[key])
-        except (IndexError, KeyError):
+        except (IndexError, KeyError, TypeError):
             return Nothing()
+
+    def and_(self, mayb: Maybe[T]) -> Maybe[T]:
+        return mayb
+
+    def filter(self, predicate: t.Callable[[ValueT], bool]) -> Maybe[ValueT]:
+        return Some(self._value) if predicate(self._value) else Nothing()
+
+    def or_(self, mayb: Maybe[ValueT]) -> Maybe[ValueT]:
+        return Some(self._value)
+
+    def or_else(self, func: t.Callable[[], Maybe[ValueT]]) -> Maybe[ValueT]:
+        return Some(self._value)
+
+    def xor(self, mayb: Maybe[ValueT]) -> Maybe[ValueT]:
+        match mayb:
+            case Nothing():
+                return Some(self._value)
+            case _:
+                return Nothing()
 
 
 @dataclass(frozen=True)
 class Nothing(_MaybeInternal[ValueT]):
-    def map(self, _: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
+    def map(self, func: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
         return Nothing()
 
-    def apply(self, _: Maybe[t.Callable[[ValueT], OutT]]) -> Maybe[OutT]:
+    def apply(self, func: Maybe[t.Callable[[ValueT], OutT]]) -> Maybe[OutT]:
         return Nothing()
 
-    def bind(self, _: t.Callable[[ValueT], Maybe[OutT]]) -> Maybe[OutT]:
+    def and_then(self, func: t.Callable[[ValueT], Maybe[OutT]]) -> Maybe[OutT]:
         return Nothing()
 
-    def bind_opt(self, _: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
+    def and_then_opt(self, func: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
         return Nothing()
 
     @t.overload
@@ -106,6 +121,25 @@ class Nothing(_MaybeInternal[ValueT]):
 
     def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
         return Nothing()
+
+    def and_(self, mayb: Maybe[T]) -> Maybe[T]:
+        return Nothing()
+
+    def filter(self, predicate: t.Callable[[ValueT], bool]) -> Maybe[ValueT]:
+        return Nothing()
+
+    def or_(self, mayb: Maybe[ValueT]) -> Maybe[ValueT]:
+        return mayb
+
+    def or_else(self, func: t.Callable[[], Maybe[ValueT]]) -> Maybe[ValueT]:
+        return func()
+
+    def xor(self, mayb: Maybe[ValueT]) -> Maybe[ValueT]:
+        match mayb:
+            case Some(value):
+                return Some(value)
+            case _:
+                return Nothing()
 
 
 Maybe = Some[ValueT] | Nothing[ValueT]
@@ -153,6 +187,10 @@ def is_nothing(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Nothing[ValueT]]:
 
 def is_some(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Some[ValueT]]:
     return maybe_value.is_some()
+
+
+def is_maybe(value: t.Any) -> t.TypeGuard[Maybe[t.Any]]:
+    return is_nothing(value) or is_some(value)
 
 
 @t.overload

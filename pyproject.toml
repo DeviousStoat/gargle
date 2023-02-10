@@ -9,8 +9,23 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.10"
 
+[tool.poetry.group.dev.dependencies]
+black = "*"
+isort = "*"
+flake8 = "*"
+poethepoet = "*"
+pytest = "*"
+
 [tool.pyright]
 strict = ["**/*"]
+
+[tool.poe.tasks]
+fmt = [{ cmd = "black ." }, { cmd = "isort ." }]
+lint = "flake8 ."
+check_type = "pyright"
+check_fmt = [{ cmd = "black --check ." }, { cmd = "isort --check ." }]
+test = "pytest -vv"
+check = ["lint", "check_fmt", "check_type", "test"]
 
 [build-system]
 requires = ["poetry-core"]

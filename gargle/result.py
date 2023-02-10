@@ -1,10 +1,10 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import functools
 import typing as t
+from dataclasses import dataclass
 
 from gargle.typeclasses import OutT
-
 
 __all__ = (
     "Err",
@@ -68,13 +68,13 @@ class Err(_ResultInternal[OkT, ErrT]):
     def value(self) -> ErrT:
         return self._value
 
-    def map(self, _: t.Callable[[OkT], OutT]) -> Result[OutT, ErrT]:
+    def map(self, func: t.Callable[[OkT], OutT]) -> Result[OutT, ErrT]:
         return Err(self.value)
 
-    def apply(self, _: Result[t.Callable[[OkT], OutT], ErrT]) -> Result[OutT, ErrT]:
+    def apply(self, func: Result[t.Callable[[OkT], OutT], ErrT]) -> Result[OutT, ErrT]:
         return Err(self.value)
 
-    def bind(self, _: t.Callable[[OkT], Result[OutT, ErrT]]) -> Result[OutT, ErrT]:
+    def bind(self, func: t.Callable[[OkT], Result[OutT, ErrT]]) -> Result[OutT, ErrT]:
         return Err(self.value)
 
 
