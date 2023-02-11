@@ -17,6 +17,8 @@ def _integrity_check(classes: list[t.Any], ignore: list[str] = []) -> None:
                 f[x]
             ), f"Function `{f[x].__name__}`"
 
+            assert funcs[0][x].__doc__ == f[x].__doc__, f"Function `{f[x].__name__}`"
+
 
 def test_maybe_integrity() -> None:
     _integrity_check([maybe.Some, maybe.Nothing], ignore=["__init__"])

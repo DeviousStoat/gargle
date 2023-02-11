@@ -19,6 +19,12 @@ pytest = "*"
 [tool.pyright]
 strict = ["**/*"]
 
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+
 [tool.poe.tasks]
 fmt = [{ cmd = "black ." }, { cmd = "isort ." }]
 lint = "flake8 ."
