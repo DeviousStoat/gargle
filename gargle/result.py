@@ -4,9 +4,8 @@ import functools
 import typing as t
 from dataclasses import dataclass
 
-from gargle.typeclasses import OutT
-
 __all__ = ("Err", "Ok", "Result", "either", "safe")
+OutT = t.TypeVar("OutT")
 OkT = t.TypeVar("OkT")
 ErrT = t.TypeVar("ErrT")
 P = t.ParamSpec("P")

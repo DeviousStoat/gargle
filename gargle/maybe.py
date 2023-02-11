@@ -3,8 +3,6 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass
 
-from gargle.typeclasses import OutT, ValueT
-
 __all__ = (
     "Maybe",
     "Nothing",
@@ -16,6 +14,8 @@ __all__ = (
     "is_maybe",
     "sequence",
 )
+ValueT = t.TypeVar("ValueT")
+OutT = t.TypeVar("OutT")
 T = t.TypeVar("T")
 T2 = t.TypeVar("T2")
 T3 = t.TypeVar("T3")
