@@ -26,7 +26,11 @@ profile = "black"
 addopts = "--doctest-modules"
 
 [tool.poe.tasks]
-fmt = [{ cmd = "black ." }, { cmd = "isort ." }]
+fmt = [
+    { script = "scripts.uniform_docstrings:main" },
+    { cmd = "black ." },
+    { cmd = "isort ." }
+]
 lint = "flake8 ."
 check_type = "pyright"
 check_fmt = [{ cmd = "black --check ." }, { cmd = "isort --check ." }]

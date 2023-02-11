@@ -16,8 +16,6 @@ __all__ = (
     "is_maybe",
     "sequence",
 )
-
-
 T = t.TypeVar("T")
 T2 = t.TypeVar("T2")
 T3 = t.TypeVar("T3")
@@ -39,9 +37,7 @@ class _MaybeInternal(t.Generic[ValueT]):
         ...
 
     def from_maybe(
-        self,
-        *,
-        default: t.Callable[[], ValueT] | ValueT | None = None,
+        self, *, default: t.Callable[[], ValueT] | ValueT | None = None
     ) -> ValueT | None:
         """
         Unwraps the value in the `Maybe`
@@ -392,7 +388,7 @@ class Some(_MaybeInternal[ValueT]):
         (Nothing(), Nothing())
         """
         return tuple(
-            Some(value) for value in t.cast(Some[tuple[t.Any, ...]], self)._value
+            (Some(value) for value in t.cast(Some[tuple[t.Any, ...]], self)._value)
         )
 
 
@@ -697,18 +693,14 @@ Maybe = Some[ValueT] | Nothing[ValueT]
 
 @t.overload
 def from_maybe(
-    maybe_value: Maybe[ValueT],
-    *,
-    default: t.Callable[[], ValueT] | ValueT,
+    maybe_value: Maybe[ValueT], *, default: t.Callable[[], ValueT] | ValueT
 ) -> ValueT:
     ...
 
 
 @t.overload
 def from_maybe(
-    maybe_value: Maybe[ValueT],
-    *,
-    default: ValueT | None = None,
+    maybe_value: Maybe[ValueT], *, default: ValueT | None = None
 ) -> ValueT | None:
     ...
 
@@ -760,7 +752,6 @@ def as_maybe(value: ValueT | None) -> Maybe[ValueT]:
     """
     if value is None:
         return Nothing()
-
     return Some(value)
 
 
@@ -857,12 +848,10 @@ def sequence(mayb_iter: t.Iterable[Maybe[T]]) -> Maybe[list[T]]:
     Nothing()
     """
     res: list[T] = []
-
     for mayb in mayb_iter:
         match mayb:
             case Some(value):
                 res.append(value)
             case Nothing():
                 return Nothing()
-
     return Some(res)

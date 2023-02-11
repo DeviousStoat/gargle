@@ -6,17 +6,9 @@ from dataclasses import dataclass
 
 from gargle.typeclasses import OutT
 
-__all__ = (
-    "Err",
-    "Ok",
-    "Result",
-    "either",
-    "safe",
-)
-
+__all__ = ("Err", "Ok", "Result", "either", "safe")
 OkT = t.TypeVar("OkT")
 ErrT = t.TypeVar("ErrT")
-
 P = t.ParamSpec("P")
 
 
@@ -34,7 +26,6 @@ class _ResultInternal(t.Generic[OkT, ErrT]):
             case Err(err):
                 if exc is not None:
                     raise exc(err)
-
                 raise RuntimeError(err)
 
 
