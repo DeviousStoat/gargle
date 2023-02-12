@@ -15,6 +15,7 @@ __all__ = (
     "is_some",
     "is_maybe",
     "sequence",
+    "maybe_next",
 )
 ValueT = t.TypeVar("ValueT", contravariant=True)
 OutT = t.TypeVar("OutT")
@@ -879,3 +880,25 @@ def sequence(mayb_iter: t.Iterable[Maybe[T]]) -> Maybe[list[T]]:
             case Nothing():
                 return Nothing()
     return Some(res)
+
+
+def maybe_next(it: t.Iterable[T]) -> Maybe[T]:
+    """
+    Returns the next element in the iterable if any, wrapped in `Maybe`
+
+    >>> maybe_next([1, 2, 3])
+    Some(1)
+
+    >>> maybe_next([])
+    Nothing()
+
+    >>> maybe_next(i for i in [1, 2, 3] if i > 2)
+    Some(3)
+
+    >>> maybe_next(i for i in [1, 2, 3] if i > 5)
+    Nothing()
+    """
+    try:
+        return Some(next(i for i in it))
+    except StopIteration:
+        return Nothing()
