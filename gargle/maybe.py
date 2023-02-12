@@ -3,6 +3,8 @@ from __future__ import annotations
 import typing as t
 from dataclasses import dataclass
 
+from gargle import result
+
 __all__ = (
     "Maybe",
     "Nothing",
@@ -391,6 +393,18 @@ class Some(_MaybeInternal[ValueT]):
             (Some(value) for value in t.cast(Some[tuple[t.Any, ...]], self)._value)
         )
 
+    def ok_or(self, err: T | t.Callable[[], T]) -> result.Result[ValueT, T]:
+        """
+        Convert `Maybe` to `Result`
+
+        >>> Some(5).ok_or("bad value")
+        Ok(5)
+
+        >>> Nothing().ok_or("bad value")
+        Err('bad value')
+        """
+        return result.Ok(self._value)
+
 
 @dataclass(frozen=True, repr=False)
 class Nothing(_MaybeInternal[ValueT]):
@@ -686,6 +700,18 @@ class Nothing(_MaybeInternal[ValueT]):
         (Nothing(), Nothing())
         """
         return (Nothing(), Nothing())
+
+    def ok_or(self, err: T | t.Callable[[], T]) -> result.Result[ValueT, T]:
+        """
+        Convert `Maybe` to `Result`
+
+        >>> Some(5).ok_or("bad value")
+        Ok(5)
+
+        >>> Nothing().ok_or("bad value")
+        Err('bad value')
+        """
+        return result.Err(err()) if callable(err) else result.Err(err)
 
 
 Maybe = Some[ValueT] | Nothing[ValueT]
