@@ -16,7 +16,7 @@ __all__ = (
     "is_maybe",
     "sequence",
 )
-ValueT = t.TypeVar("ValueT")
+ValueT = t.TypeVar("ValueT", contravariant=True)
 OutT = t.TypeVar("OutT")
 T = t.TypeVar("T")
 T2 = t.TypeVar("T2")
@@ -31,16 +31,16 @@ class _MaybeInternal(t.Generic[ValueT]):
     """
 
     @t.overload
-    def from_maybe(self, *, default: t.Callable[[], ValueT] | ValueT) -> ValueT:
+    def from_maybe(self, *, default: t.Callable[[], T] | T) -> ValueT | T:
         ...
 
     @t.overload
-    def from_maybe(self, *, default: ValueT | None = None) -> ValueT | None:
+    def from_maybe(self, *, default: T | None = None) -> ValueT | T | None:
         ...
 
     def from_maybe(
-        self, *, default: t.Callable[[], ValueT] | ValueT | None = None
-    ) -> ValueT | None:
+        self, *, default: t.Callable[[], T] | T | None = None
+    ) -> ValueT | T | None:
         """
         Unwraps the value in the `Maybe`
         `Nothing` returns `None` unless `default` is specified
@@ -172,11 +172,11 @@ class Some(_MaybeInternal[ValueT]):
         return as_maybe(func(self._value))
 
     @t.overload
-    def get(self: Maybe[list[T]], key: int) -> Maybe[T]:
+    def get(self: Maybe[dict[T, T2]], key: T) -> Maybe[T2]:
         ...
 
     @t.overload
-    def get(self: Maybe[dict[T, T2]], key: T) -> Maybe[T2]:
+    def get(self: Maybe[list[T]], key: int) -> Maybe[T]:
         ...
 
     def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
@@ -489,11 +489,11 @@ class Nothing(_MaybeInternal[ValueT]):
         return Nothing()
 
     @t.overload
-    def get(self: Maybe[list[T]], key: int) -> Maybe[T]:
+    def get(self: Maybe[dict[T, T2]], key: T) -> Maybe[T2]:
         ...
 
     @t.overload
-    def get(self: Maybe[dict[T, T2]], key: T) -> Maybe[T2]:
+    def get(self: Maybe[list[T]], key: int) -> Maybe[T]:
         ...
 
     def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
@@ -719,23 +719,21 @@ Maybe = Some[ValueT] | Nothing[ValueT]
 
 @t.overload
 def from_maybe(
-    maybe_value: Maybe[ValueT], *, default: t.Callable[[], ValueT] | ValueT
-) -> ValueT:
+    maybe_value: Maybe[ValueT], *, default: t.Callable[[], T] | T
+) -> ValueT | T:
     ...
 
 
 @t.overload
 def from_maybe(
-    maybe_value: Maybe[ValueT], *, default: ValueT | None = None
-) -> ValueT | None:
+    maybe_value: Maybe[ValueT], *, default: T | None = None
+) -> ValueT | T | None:
     ...
 
 
 def from_maybe(
-    maybe_value: Maybe[ValueT],
-    *,
-    default: t.Callable[[], ValueT] | ValueT | None = None,
-) -> ValueT | None:
+    maybe_value: Maybe[ValueT], *, default: t.Callable[[], T] | T | None = None
+) -> ValueT | T | None:
     """
     Unwraps the value in a `Maybe`
     `Nothing` returns `None` unless `default` is specified
@@ -824,12 +822,12 @@ def is_maybe(value: t.Any) -> t.TypeGuard[Maybe[t.Any]]:
 
 
 @t.overload
-def maybe_get(some_seq: dict[T, T2], key: T) -> Maybe[T2]:
+def maybe_get(some_seq: t.Sequence[T], key: int) -> Maybe[T]:
     ...
 
 
 @t.overload
-def maybe_get(some_seq: list[T], key: int) -> Maybe[T]:
+def maybe_get(some_seq: t.Mapping[T, T2], key: T) -> Maybe[T2]:
     ...
 
 
