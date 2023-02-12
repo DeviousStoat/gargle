@@ -528,7 +528,7 @@ def result_wrapped_for(
 
 
 def filter_to_result(
-    value: OkT, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[], ErrT]
+    value: OkT, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[OkT], ErrT]
 ) -> Result[OkT, ErrT]:
     """
     Checks if the `value` passes the `predicate`.
@@ -540,4 +540,4 @@ def filter_to_result(
     >>> filter_to_result(5, lambda x: x > 7, "lower than 7")
     Err('lower than 7')
     """
-    return Ok(value) if predicate(value) else Err(err() if callable(err) else err)
+    return Ok(value) if predicate(value) else Err(err(value) if callable(err) else err)

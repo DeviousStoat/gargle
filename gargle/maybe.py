@@ -17,7 +17,7 @@ __all__ = (
     "sequence",
     "maybe_next",
 )
-ValueT = t.TypeVar("ValueT", contravariant=True)
+ValueT = t.TypeVar("ValueT")
 OutT = t.TypeVar("OutT")
 T = t.TypeVar("T")
 T2 = t.TypeVar("T2")
