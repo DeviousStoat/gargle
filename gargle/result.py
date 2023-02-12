@@ -6,10 +6,11 @@ from dataclasses import dataclass
 
 from gargle import maybe
 
-__all__ = ("Err", "Ok", "Result", "result_wrapped")
+__all__ = ("Err", "Ok", "Result", "result_wrapped", "result_wrapped_for")
 OutT = t.TypeVar("OutT")
 OkT = t.TypeVar("OkT")
 ErrT = t.TypeVar("ErrT")
+ExcT = t.TypeVar("ExcT", bound=Exception)
 P = t.ParamSpec("P")
 
 
@@ -390,3 +391,58 @@ def result_wrapped(func: t.Callable[P, OutT]) -> t.Callable[P, Result[OutT, Exce
             return Err(exc)
 
     return wrapper
+
+
+@t.overload
+def result_wrapped_for(
+    excs_to_catch: type[ExcT],
+) -> t.Callable[[t.Callable[P, OutT]], t.Callable[P, Result[OutT, ExcT]]]:
+    ...
+
+
+@t.overload
+def result_wrapped_for(
+    excs_to_catch: tuple[type[Exception], ...]
+) -> t.Callable[[t.Callable[P, OutT]], t.Callable[P, Result[OutT, Exception]]]:
+    ...
+
+
+def result_wrapped_for(
+    excs_to_catch: type[Exception] | tuple[type[Exception], ...]
+) -> t.Callable[[t.Callable[P, OutT]], t.Callable[P, Result[OutT, Exception]]]:
+    """
+    Like `result_wrapped` but you can specify an exception type or
+    a tuple of exception types to catch.
+    The others will be ignored and raised normally.
+
+    >>> @result_wrapped_for(ZeroDivisionError)
+    ... def div(x: int, y: int) -> float:
+    ...     return x / y
+
+    >>> div(6, 3)
+    Ok(2.0)
+
+    >>> div(6, 0)
+    Err(ZeroDivisionError('division by zero'))
+
+    >>> @result_wrapped_for((ValueError, TypeError))
+    ... def div(x: int, y: int) -> float:
+    ...     return x / y
+
+    >>> div(6, 0)
+    Traceback (most recent call last):
+    ...
+    ZeroDivisionError: division by zero
+    """
+
+    def decorator(func: t.Callable[P, OutT]) -> t.Callable[P, Result[OutT, Exception]]:
+        @functools.wraps(func)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> Result[OutT, Exception]:
+            try:
+                return Ok(func(*args, **kwargs))
+            except excs_to_catch as exc:
+                return Err(exc)
+
+        return wrapper
+
+    return decorator
