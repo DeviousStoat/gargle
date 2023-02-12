@@ -211,6 +211,28 @@ class Ok(_ResultInternal[OkT, ErrT]):
         """
         return ok_func(self._value)
 
+    def filter_or(
+        self, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[], ErrT]
+    ) -> Result[OkT, ErrT]:
+        """
+        Checks if the `Ok` value passes the `predicate`. If not returns an `Err`
+        containing `err` value.
+
+        >>> Ok(5).filter_or(lambda x: x > 3, "lower than 3")
+        Ok(5)
+
+        >>> Ok(5).filter_or(lambda x: x > 7, "lower than 7")
+        Err('lower than 7')
+
+        >>> Err("bad value").filter_or(lambda x: x > 7, "lower than 7")
+        Err('bad value')
+        """
+        return (
+            Ok(self._value)
+            if predicate(self._value)
+            else Err(err() if callable(err) else err)
+        )
+
 
 @dataclass(frozen=True, repr=False)
 class Err(_ResultInternal[OkT, ErrT]):
@@ -363,6 +385,24 @@ class Err(_ResultInternal[OkT, ErrT]):
         """
         return err_func(self._value)
 
+    def filter_or(
+        self, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[], ErrT]
+    ) -> Result[OkT, ErrT]:
+        """
+        Checks if the `Ok` value passes the `predicate`. If not returns an `Err`
+        containing `err` value.
+
+        >>> Ok(5).filter_or(lambda x: x > 3, "lower than 3")
+        Ok(5)
+
+        >>> Ok(5).filter_or(lambda x: x > 7, "lower than 7")
+        Err('lower than 7')
+
+        >>> Err("bad value").filter_or(lambda x: x > 7, "lower than 7")
+        Err('bad value')
+        """
+        return Err(self._value)
+
 
 Result = Ok[OkT, ErrT] | Err[OkT, ErrT]
 
@@ -485,3 +525,19 @@ def result_wrapped_for(
         return wrapper
 
     return decorator
+
+
+def filter_to_result(
+    value: OkT, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[], ErrT]
+) -> Result[OkT, ErrT]:
+    """
+    Checks if the `value` passes the `predicate`.
+    If it does wrap it in `Ok` otherwise returns an `Err` containing `err` value.
+
+    >>> filter_to_result(5, lambda x: x > 3, "lower than 3")
+    Ok(5)
+
+    >>> filter_to_result(5, lambda x: x > 7, "lower than 7")
+    Err('lower than 7')
+    """
+    return Ok(value) if predicate(value) else Err(err() if callable(err) else err)
