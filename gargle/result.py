@@ -367,10 +367,25 @@ class Err(_ResultInternal[OkT, ErrT]):
 Result = Ok[OkT, ErrT] | Err[OkT, ErrT]
 
 
+@t.overload
+def result_wrapped(  # type: ignore[misc]
+    func: t.Callable[P, Result[OutT, ErrT]]
+) -> t.Callable[P, Result[OutT, ErrT | Exception]]:
+    ...
+
+
+@t.overload
 def result_wrapped(func: t.Callable[P, OutT]) -> t.Callable[P, Result[OutT, Exception]]:
+    ...
+
+
+def result_wrapped(func: t.Callable[P, t.Any]) -> t.Callable[P, Result[t.Any, t.Any]]:
     """
     Decorator that wraps the result of the decorated function in `Result`.
     Catching any exception and storing it in `Err`
+
+    If the decorated function already returns a `Result`, the returned value won't
+    be wrapped again.
 
     >>> @result_wrapped
     ... def div(x: int, y: int) -> float:
@@ -381,12 +396,36 @@ def result_wrapped(func: t.Callable[P, OutT]) -> t.Callable[P, Result[OutT, Exce
 
     >>> div(6, 0)
     Err(ZeroDivisionError('division by zero'))
+
+    >>> @result_wrapped
+    ... def safe_div(x: int, y: int) -> Result[float, str]:
+    ...     try:
+    ...         res = x / y
+    ...         if res == 2.0:
+    ...             raise ValueError("this cannot be 2.0")
+    ...         return Ok(res)
+    ...     except ZeroDivisionError:
+    ...         return Err("division by zero")
+
+    >>> safe_div(8, 2)
+    Ok(4.0)
+
+    >>> safe_div(6, 3)
+    Err(ValueError('this cannot be 2.0'))
+
+    >>> safe_div(6, 0)
+    Err('division by zero')
     """
 
     @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Result[OutT, Exception]:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Result[t.Any, t.Any]:
         try:
-            return Ok(func(*args, **kwargs))
+            res = func(*args, **kwargs)
+            return (
+                t.cast(Ok[t.Any, t.Any] | Err[t.Any, t.Any], res)
+                if isinstance(res, (Ok, Err))
+                else Ok(res)
+            )
         except Exception as exc:
             return Err(exc)
 
