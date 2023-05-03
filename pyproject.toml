@@ -27,9 +27,12 @@ addopts = "--doctest-modules"
 
 [tool.poe.tasks]
 fmt = [
-    { script = "scripts.uniform_docstrings:main" },
     { cmd = "black ." },
     { cmd = "isort ." }
+]
+uniform_docstrings = [
+    { script = "scripts.uniform_docstrings:main" },
+    { ref = "fmt" }
 ]
 lint = "flake8 ."
 check_type = "pyright"
