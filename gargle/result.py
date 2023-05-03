@@ -233,6 +233,60 @@ class Ok(_ResultInternal[OkT, ErrT]):
             else Err(err() if callable(err) else err)
         )
 
+    def is_ok(self) -> bool:
+        """
+        Checks if the value is `Ok`
+
+        >>> Ok(5).is_ok()
+        True
+
+        >>> Err("bad value").is_ok()
+        False
+        """
+        return True
+
+    def is_err(self) -> bool:
+        """
+        Checks if the value is `Err`
+
+        >>> Ok(5).is_err()
+        False
+
+        >>> Err("bad value").is_err()
+        True
+        """
+        return False
+
+    def is_ok_and(self, predicate: t.Callable[[OkT], bool]) -> bool:
+        """
+        Checks if the value is `Ok` and passes the `predicate`
+
+        >>> Ok(5).is_ok_and(lambda value: value == 5)
+        True
+
+        >>> Ok(5).is_ok_and(lambda value: value == 6)
+        False
+
+        >>> Err("bad value").is_ok_and(lambda value: value == 5)
+        False
+        """
+        return predicate(self._value)
+
+    def is_err_and(self, predicate: t.Callable[[ErrT], bool]) -> bool:
+        """
+        Checks if the value is `Err` and passes the `predicate`
+
+        >>> Ok(5).is_err_and(lambda value: value == "bad value")
+        False
+
+        >>> Err("bad value").is_err_and(lambda value: value == "bad value")
+        True
+
+        >>> Err("another bad value").is_err_and(lambda value: value == "bad value")
+        False
+        """
+        return False
+
 
 @dataclass(frozen=True, repr=False)
 class Err(_ResultInternal[OkT, ErrT]):
@@ -403,10 +457,65 @@ class Err(_ResultInternal[OkT, ErrT]):
         """
         return Err(self._value)
 
+    def is_ok(self) -> bool:
+        """
+        Checks if the value is `Ok`
+
+        >>> Ok(5).is_ok()
+        True
+
+        >>> Err("bad value").is_ok()
+        False
+        """
+        return False
+
+    def is_err(self) -> bool:
+        """
+        Checks if the value is `Err`
+
+        >>> Ok(5).is_err()
+        False
+
+        >>> Err("bad value").is_err()
+        True
+        """
+        return True
+
+    def is_ok_and(self, predicate: t.Callable[[OkT], bool]) -> bool:
+        """
+        Checks if the value is `Ok` and passes the `predicate`
+
+        >>> Ok(5).is_ok_and(lambda value: value == 5)
+        True
+
+        >>> Ok(5).is_ok_and(lambda value: value == 6)
+        False
+
+        >>> Err("bad value").is_ok_and(lambda value: value == 5)
+        False
+        """
+        return False
+
+    def is_err_and(self, predicate: t.Callable[[ErrT], bool]) -> bool:
+        """
+        Checks if the value is `Err` and passes the `predicate`
+
+        >>> Ok(5).is_err_and(lambda value: value == "bad value")
+        False
+
+        >>> Err("bad value").is_err_and(lambda value: value == "bad value")
+        True
+
+        >>> Err("another bad value").is_err_and(lambda value: value == "bad value")
+        False
+        """
+        return predicate(self._value)
+
 
 Result = Ok[OkT, ErrT] | Err[OkT, ErrT]
 
 
+# TODO: check type ignore for overlapping overloads
 @t.overload
 def result_wrapped(  # type: ignore[misc]
     func: t.Callable[P, Result[OutT, ErrT]]

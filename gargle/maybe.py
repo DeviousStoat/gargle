@@ -390,8 +390,11 @@ class Some(_MaybeInternal[ValueT]):
         >>> Nothing().unzip()
         (Nothing(), Nothing())
         """
-        return tuple(
-            (Some(value) for value in t.cast(Some[tuple[t.Any, ...]], self)._value)
+        return t.cast(
+            tuple[Maybe[T], Maybe[T2]],
+            tuple(
+                (Some(value) for value in t.cast(Some[tuple[t.Any, ...]], self)._value)
+            ),
         )
 
     def ok_or(self, err: T | t.Callable[[], T]) -> result.Result[ValueT, T]:
@@ -899,6 +902,6 @@ def maybe_next(it: t.Iterable[T]) -> Maybe[T]:
     Nothing()
     """
     try:
-        return Some(next(i for i in it))
+        return Some(next((i for i in it)))
     except StopIteration:
         return Nothing()
