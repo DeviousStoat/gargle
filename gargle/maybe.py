@@ -98,6 +98,28 @@ class Some(_MaybeInternal[ValueT]):
     def __contains__(self, value: t.Any) -> bool:
         return self._value == value
 
+    def from_maybe(self, *, default: t.Callable[[], T] | T | None = None) -> ValueT:
+        """
+        Unwraps the value in the `Maybe`
+        `Nothing` returns `None` unless `default` is specified
+
+        >>> Some(5).from_maybe()
+        5
+
+        >>> Some(5).from_maybe(default=10)
+        5
+
+        >>> Nothing().from_maybe() is None
+        True
+
+        >>> Nothing().from_maybe(default=10)
+        10
+
+        >>> Nothing().from_maybe(default=lambda: int("10"))
+        10
+        """
+        return self._value
+
     def map(self, func: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
         """
         Calls the `func` with the value wrapped in `Maybe` if `Some`
@@ -417,6 +439,38 @@ class Nothing(_MaybeInternal[ValueT]):
 
     def __repr__(self) -> str:
         return "Nothing()"
+
+    @t.overload
+    def from_maybe(self, *, default: t.Callable[[], T] | T) -> ValueT | T:
+        ...
+
+    @t.overload
+    def from_maybe(self, *, default: T | None = None) -> ValueT | T | None:
+        ...
+
+    def from_maybe(
+        self, *, default: t.Callable[[], T] | T | None = None
+    ) -> ValueT | T | None:
+        """
+        Unwraps the value in the `Maybe`
+        `Nothing` returns `None` unless `default` is specified
+
+        >>> Some(5).from_maybe()
+        5
+
+        >>> Some(5).from_maybe(default=10)
+        5
+
+        >>> Nothing().from_maybe() is None
+        True
+
+        >>> Nothing().from_maybe(default=10)
+        10
+
+        >>> Nothing().from_maybe(default=lambda: int("10"))
+        10
+        """
+        return default() if callable(default) else default
 
     def map(self, func: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
         """
@@ -862,6 +916,8 @@ def maybe_get(some_seq: t.Any, key: t.Any) -> Maybe[T] | Maybe[T2]:
 def sequence(mayb_iter: t.Iterable[Maybe[T]]) -> Maybe[list[T]]:
     """
     Turns an iterable of `Maybe`s into a `Maybe` list
+    This returns `Nothing` if any of the values are `Nothing`
+    See `cat_maybes` for a version that ignores `Nothing`s
 
     >>> sequence([Some(1), Some(2), Some(3)])
     Some([1, 2, 3])
@@ -905,3 +961,56 @@ def maybe_next(it: t.Iterable[T]) -> Maybe[T]:
         return Some(next((i for i in it)))
     except StopIteration:
         return Nothing()
+
+
+def maybe_apply(func: t.Callable[[T], T2], mayb: Maybe[T], default: T2) -> T2:
+    """
+    Applies a function to the value in `Maybe` if it exists, otherwise returns `default`
+
+    >>> maybe_apply(lambda x: x + 1, Some(5), 0)
+    6
+
+    >>> maybe_apply(lambda x: x + 1, Nothing(), 0)
+    0
+    """
+    match mayb:
+        case Some(value):
+            return func(value)
+        case Nothing():
+            return default
+
+
+def cat_maybes(lst: list[Maybe[T]]) -> list[T]:
+    """
+    Returns a list of all the `Some` values in the list of `Maybe`s
+
+    >>> cat_maybes([Some(1), Some(2), Some(3)])
+    [1, 2, 3]
+
+    >>> cat_maybes([Some(1), Some(2), Nothing()])
+    [1, 2]
+
+    >>> cat_maybes([Nothing(), Nothing()])
+    []
+    """
+    return [value.from_maybe() for value in lst if is_some(value)]
+
+
+def map_maybe(func: t.Callable[[T], Maybe[T2]], lst: list[T]) -> list[T2]:
+    """
+    Maps a function returning `Maybe`s over a list,
+    returning a list of the `Some` results.
+
+    >>> map_maybe(lambda x: Some(x + 1), [1, 2, 3])
+    [2, 3, 4]
+
+    >>> map_maybe(lambda x: Nothing(), [1, 2, 3])
+    []
+
+    >>> map_maybe(lambda x: Some(5) if x == 7 else Nothing(), [7, 3])
+    [5]
+
+    >>> map_maybe(lambda x: Some(0) if x is None else Some(1), [None, 5, None, 7])
+    [0, 1, 0, 1]
+    """
+    return [res.from_maybe() for value in lst if is_some(res := func(value))]
