@@ -15,6 +15,7 @@ isort = "*"
 flake8 = "*"
 poethepoet = "*"
 pytest = "*"
+pydantic = "*"
 
 [tool.pyright]
 strict = ["**/*"]

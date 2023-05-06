@@ -1,6 +1,9 @@
+# pyright: reportPrivateUsage=false
+
 from __future__ import annotations
 
 import functools
+import importlib.util
 import typing as t
 from dataclasses import dataclass
 
@@ -11,12 +14,17 @@ __all__ = (
     "Nothing",
     "Some",
     "as_maybe",
+    "as_maybe_flat",
     "from_maybe",
     "is_nothing",
     "is_some",
     "is_maybe",
     "sequence",
     "maybe_next",
+    "maybe_apply",
+    "cat_maybes",
+    "map_maybe",
+    "maybe_wrapped",
 )
 ValueT = t.TypeVar("ValueT")
 OutT = t.TypeVar("OutT")
@@ -32,6 +40,39 @@ class _MaybeInternal(t.Generic[ValueT]):
     """
     Internal class gathering common methods for the maybe classes.
     """
+
+    if importlib.util.find_spec("pydantic") is not None:
+        from pydantic.fields import ModelField
+
+        @classmethod
+        def __get_validators__(
+            cls,
+        ) -> t.Iterable[t.Callable[[t.Any, t.Any], Maybe[ValueT]]]:
+            """
+            Yields validator for pydantic
+            """
+            yield cls._pydantic_validate
+
+        @classmethod
+        def _pydantic_validate(cls, value: t.Any, field: ModelField) -> "Maybe[ValueT]":
+            from pydantic import ValidationError
+
+            value = as_maybe_flat(value)
+
+            if not field.sub_fields or value.is_nothing():
+                return value
+
+            sub_field = field.sub_fields[0]
+            valid_value, error = sub_field.validate(value._value, {}, loc="maybe_value")
+            if error:
+                # quick hack to avoid raising 2 validation errors
+                # the validation will be called for both class of the `Maybe` union
+                # (`Some` and `Nothing`) and we want to raise only one error
+                errors = [error] if field.type_ is Some else []
+
+                raise ValidationError(errors, t.cast(t.Any, cls))
+
+            return as_maybe(valid_value)
 
     @t.overload
     def from_maybe(self, *, default: t.Callable[[], T] | T) -> ValueT | T:
@@ -837,6 +878,37 @@ def as_maybe(value: ValueT | None) -> Maybe[ValueT]:
     if value is None:
         return Nothing()
     return Some(value)
+
+
+@t.overload
+def as_maybe_flat(value: Maybe[ValueT]) -> Maybe[ValueT]:
+    ...
+
+
+@t.overload
+def as_maybe_flat(value: ValueT | None) -> Maybe[ValueT]:
+    ...
+
+
+def as_maybe_flat(value: Maybe[ValueT] | ValueT | None) -> Maybe[ValueT]:
+    """
+    Like `as_maybe` but if `value` is already a `Maybe` it returns it as is.
+
+    >>> as_maybe_flat(5)
+    Some(5)
+
+    >>> as_maybe_flat(None)
+    Nothing()
+
+    >>> as_maybe_flat(Nothing())
+    Nothing()
+
+    >>> as_maybe_flat(Some(5))
+    Some(5)
+    """
+    if isinstance(value, (Some, Nothing)):
+        return t.cast(Maybe[ValueT], value)
+    return as_maybe(value)
 
 
 def is_nothing(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Nothing[ValueT]]:
