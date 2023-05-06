@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import typing as t
 from dataclasses import dataclass
 
@@ -24,6 +25,7 @@ T2 = t.TypeVar("T2")
 T3 = t.TypeVar("T3")
 T4 = t.TypeVar("T4")
 T5 = t.TypeVar("T5")
+P = t.ParamSpec("P")
 
 
 class _MaybeInternal(t.Generic[ValueT]):
@@ -1014,3 +1016,27 @@ def map_maybe(func: t.Callable[[T], Maybe[T2]], lst: list[T]) -> list[T2]:
     [0, 1, 0, 1]
     """
     return [res.from_maybe() for value in lst if is_some(res := func(value))]
+
+
+def maybe_wrapped(func: t.Callable[P, T | None]) -> t.Callable[P, Maybe[T]]:
+    """
+    Decorator that wraps the optional result of the decorated function in `Maybe`.
+    `Some(value)` or `Nothing()` if the function returns `None`.
+
+    >>> @maybe_wrapped
+    ... def optional_value(key: str) -> str | None:
+    ...     return {"value1": "res1"}.get(key)
+
+    >>> optional_value("value1")
+    Some('res1')
+
+    >>> optional_value("value2")
+    Nothing()
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> Maybe[T]:
+        res = func(*args, **kwargs)
+        return as_maybe(res)
+
+    return wrapper
