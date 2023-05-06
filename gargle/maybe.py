@@ -1112,3 +1112,40 @@ def maybe_wrapped(func: t.Callable[P, T | None]) -> t.Callable[P, Maybe[T]]:
         return as_maybe(res)
 
     return wrapper
+
+
+if importlib.util.find_spec("pydantic") is not None:
+    from pydantic import Field, validator  # type: ignore
+    from pydantic.main import ModelMetaclass
+
+    def _is_maybe_type(tp: t.Any) -> bool:
+        return hasattr(tp, "__args__") and tuple(
+            tp_arg.__origin__ for tp_arg in tp.__args__
+        ) == (Some, Nothing)
+
+    @t.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
+    class OptionalAsMaybe(ModelMetaclass):
+        def __new__(
+            cls,
+            name: str,
+            bases: tuple[type],
+            namespaces: dict[str, t.Any],
+            **kwargs: t.Any,
+        ) -> t.Any:
+            annotations = namespaces.get("__annotations__", {})
+            for base in bases:
+                annotations.update(base.__annotations__)
+
+            maybe_fields = [
+                field
+                for field, tp in annotations.items()
+                if not field.startswith("__") and _is_maybe_type(tp)
+            ]
+
+            namespaces["_gargle_optional_as_maybe_validator"] = validator(
+                *maybe_fields, pre=True, always=True, allow_reuse=True
+            )(lambda v: Nothing() if v is None else v)
+
+            return super().__new__(  # type: ignore
+                cls, name, bases, namespaces, **kwargs
+            )
