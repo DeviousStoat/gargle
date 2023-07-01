@@ -37,9 +37,7 @@ P = t.ParamSpec("P")
 
 
 class _MaybeInternal(t.Generic[ValueT]):
-    """
-    Internal class gathering common methods for the maybe classes.
-    """
+    """Internal class gathering common methods for the maybe classes."""
 
     if importlib.util.find_spec("pydantic") is not None:
         from pydantic.fields import ModelField
@@ -48,13 +46,11 @@ class _MaybeInternal(t.Generic[ValueT]):
         def __get_validators__(
             cls,
         ) -> t.Iterable[t.Callable[[t.Any, t.Any], Maybe[ValueT]]]:
-            """
-            Yields validator for pydantic
-            """
+            """Yields validator for pydantic."""
             yield cls._pydantic_validate
 
         @classmethod
-        def _pydantic_validate(cls, value: t.Any, field: ModelField) -> "Maybe[ValueT]":
+        def _pydantic_validate(cls, value: t.Any, field: ModelField) -> Maybe[ValueT]:
             from pydantic import ValidationError
 
             value = as_maybe_flat(value)
@@ -85,9 +81,8 @@ class _MaybeInternal(t.Generic[ValueT]):
     def from_maybe(
         self, *, default: t.Callable[[], T] | T | None = None
     ) -> ValueT | T | None:
-        """
-        Unwraps the value in the `Maybe`
-        `Nothing` returns `None` unless `default` is specified
+        """Unwraps the value in the `Maybe`
+        `Nothing` returns `None` unless `default` is specified.
 
         >>> Some(5).from_maybe()
         5
@@ -107,8 +102,7 @@ class _MaybeInternal(t.Generic[ValueT]):
         return from_maybe(t.cast(Maybe[ValueT], self), default=default)
 
     def is_nothing(self) -> bool:
-        """
-        Checks if a maybe value is `Nothing`
+        """Checks if a maybe value is `Nothing`.
 
         >>> is_nothing(Some(5))
         False
@@ -119,8 +113,7 @@ class _MaybeInternal(t.Generic[ValueT]):
         return isinstance(self, Nothing)
 
     def is_some(self) -> bool:
-        """
-        Checks if a maybe value is `Some`
+        """Checks if a maybe value is `Some`.
 
         >>> is_some(Some(5))
         True
@@ -142,9 +135,8 @@ class Some(_MaybeInternal[ValueT]):
         return self._value == value
 
     def from_maybe(self, *, default: t.Callable[[], T] | T | None = None) -> ValueT:
-        """
-        Unwraps the value in the `Maybe`
-        `Nothing` returns `None` unless `default` is specified
+        """Unwraps the value in the `Maybe`
+        `Nothing` returns `None` unless `default` is specified.
 
         >>> Some(5).from_maybe()
         5
@@ -164,8 +156,7 @@ class Some(_MaybeInternal[ValueT]):
         return self._value
 
     def map(self, func: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
-        """
-        Calls the `func` with the value wrapped in `Maybe` if `Some`
+        """Calls the `func` with the value wrapped in `Maybe` if `Some`.
 
         >>> Some(5).map(lambda x: x + 1)
         Some(6)
@@ -178,9 +169,8 @@ class Some(_MaybeInternal[ValueT]):
     def map_or(
         self, func: t.Callable[[ValueT], OutT], *, default: OutT | t.Callable[[], OutT]
     ) -> OutT:
-        """
-        Calls the `func` with the value wrapped in `Maybe` if `Some`
-        returning the unwrapped value else return `default`
+        """Calls the `func` with the value wrapped in `Maybe` if `Some`
+        returning the unwrapped value else return `default`.
 
         >>> Some(5).map_or(lambda x: x + 1, default=10)
         6
@@ -194,8 +184,7 @@ class Some(_MaybeInternal[ValueT]):
         return func(self._value)
 
     def and_(self, mayb: Maybe[T]) -> Maybe[T]:
-        """
-        Returns `Nothing` if the value is `Nothing` else returns `mayb`
+        """Returns `Nothing` if the value is `Nothing` else returns `mayb`.
 
         >>> Some(5).and_(Nothing())
         Nothing()
@@ -209,9 +198,8 @@ class Some(_MaybeInternal[ValueT]):
         return mayb
 
     def and_then(self, func: t.Callable[[ValueT], Maybe[OutT]]) -> Maybe[OutT]:
-        """
-        Returns the result of calling `func` with the wrapped value if `Some`
-        else `Nothing`
+        """Returns the result of calling `func` with the wrapped value if `Some`
+        else `Nothing`.
 
         >>> Some(5).and_then(lambda x: Some(str(x + 10)))
         Some('15')
@@ -222,9 +210,8 @@ class Some(_MaybeInternal[ValueT]):
         return func(self._value)
 
     def and_then_opt(self, func: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
-        """
-        Same as `and_then` but `func` returns `value | None` which gets wrapped
-        to `Maybe` through `as_maybe`
+        """Same as `and_then` but `func` returns `value | None` which gets wrapped
+        to `Maybe` through `as_maybe`.
 
         >>> Some("key1").and_then_opt(lambda k: {"key1": "value1"}.get(k))
         Some('value1')
@@ -246,8 +233,7 @@ class Some(_MaybeInternal[ValueT]):
         ...
 
     def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
-        """
-        Tries to get the values assigned to `key` in the wrapped sequence
+        """Tries to get the values assigned to `key` in the wrapped sequence.
 
         >>> Some([1, 2, 3]).get(1)
         Some(2)
@@ -270,8 +256,7 @@ class Some(_MaybeInternal[ValueT]):
             return Nothing()
 
     def filter(self, predicate: t.Callable[[ValueT], bool]) -> Maybe[ValueT]:
-        """
-        Checks if `Some` and the wrapped value passes the `predicate`
+        """Checks if `Some` and the wrapped value passes the `predicate`.
 
         >>> Some(5).filter(lambda x: x > 2)
         Some(5)
@@ -285,8 +270,7 @@ class Some(_MaybeInternal[ValueT]):
         return Some(self._value) if predicate(self._value) else Nothing()
 
     def or_(self, mayb: Maybe[ValueT] | t.Callable[[], Maybe[ValueT]]) -> Maybe[ValueT]:
-        """
-        Return value if `Some` otherwise returns `mayb`
+        """Return value if `Some` otherwise returns `mayb`.
 
         >>> Some(5).or_(Some(6))
         Some(5)
@@ -300,8 +284,7 @@ class Some(_MaybeInternal[ValueT]):
         return Some(self._value)
 
     def xor(self, mayb: Maybe[ValueT]) -> Maybe[ValueT]:
-        """
-        Checks if exactly one of the `Maybe`s are `Some`
+        """Checks if exactly one of the `Maybe`s are `Some`.
 
         >>> Some(5).xor(Some(6))
         Nothing()
@@ -354,8 +337,7 @@ class Some(_MaybeInternal[ValueT]):
         ...
 
     def zip(self, *maybs: Maybe[t.Any]) -> Maybe[tuple[t.Any, ...]]:
-        """
-        Zips the `Maybe` with several other `Maybe`s if they are all `Some`
+        """Zips the `Maybe` with several other `Maybe`s if they are all `Some`.
 
         >>> Some(5).zip(Some(6))
         Some((5, 6))
@@ -430,9 +412,8 @@ class Some(_MaybeInternal[ValueT]):
     def zip_with(
         self, func: t.Callable[..., OutT], *maybs: Maybe[t.Any]
     ) -> Maybe[OutT]:
-        """
-        Like `zip` but passes all the unwrapped values in `func` instead of
-        building a tuple with them
+        """Like `zip` but passes all the unwrapped values in `func` instead of
+        building a tuple with them.
 
         >>> def merge_dicts(d1: dict, d2: dict) -> dict:
         ...     return d1 | d2
@@ -446,8 +427,7 @@ class Some(_MaybeInternal[ValueT]):
         return self.zip(*maybs).map(lambda values: func(*values))
 
     def unzip(self: Maybe[tuple[T, T2]]) -> tuple[Maybe[T], Maybe[T2]]:
-        """
-        Turns a `Maybe tuple` into a `tuple` of `Maybe`s
+        """Turns a `Maybe tuple` into a `tuple` of `Maybe`s.
 
         >>> Some((1, 2)).unzip()
         (Some(1), Some(2))
@@ -458,13 +438,12 @@ class Some(_MaybeInternal[ValueT]):
         return t.cast(
             tuple[Maybe[T], Maybe[T2]],
             tuple(
-                (Some(value) for value in t.cast(Some[tuple[t.Any, ...]], self)._value)
+                Some(value) for value in t.cast(Some[tuple[t.Any, ...]], self)._value
             ),
         )
 
     def ok_or(self, err: T | t.Callable[[], T]) -> result.Result[ValueT, T]:
-        """
-        Convert `Maybe` to `Result`
+        """Convert `Maybe` to `Result`.
 
         >>> Some(5).ok_or("bad value")
         Ok(5)
@@ -494,9 +473,8 @@ class Nothing(_MaybeInternal[ValueT]):
     def from_maybe(
         self, *, default: t.Callable[[], T] | T | None = None
     ) -> ValueT | T | None:
-        """
-        Unwraps the value in the `Maybe`
-        `Nothing` returns `None` unless `default` is specified
+        """Unwraps the value in the `Maybe`
+        `Nothing` returns `None` unless `default` is specified.
 
         >>> Some(5).from_maybe()
         5
@@ -516,8 +494,7 @@ class Nothing(_MaybeInternal[ValueT]):
         return default() if callable(default) else default
 
     def map(self, func: t.Callable[[ValueT], OutT]) -> Maybe[OutT]:
-        """
-        Calls the `func` with the value wrapped in `Maybe` if `Some`
+        """Calls the `func` with the value wrapped in `Maybe` if `Some`.
 
         >>> Some(5).map(lambda x: x + 1)
         Some(6)
@@ -530,9 +507,8 @@ class Nothing(_MaybeInternal[ValueT]):
     def map_or(
         self, func: t.Callable[[ValueT], OutT], *, default: OutT | t.Callable[[], OutT]
     ) -> OutT:
-        """
-        Calls the `func` with the value wrapped in `Maybe` if `Some`
-        returning the unwrapped value else return `default`
+        """Calls the `func` with the value wrapped in `Maybe` if `Some`
+        returning the unwrapped value else return `default`.
 
         >>> Some(5).map_or(lambda x: x + 1, default=10)
         6
@@ -546,8 +522,7 @@ class Nothing(_MaybeInternal[ValueT]):
         return default() if callable(default) else default
 
     def and_(self, mayb: Maybe[T]) -> Maybe[T]:
-        """
-        Returns `Nothing` if the value is `Nothing` else returns `mayb`
+        """Returns `Nothing` if the value is `Nothing` else returns `mayb`.
 
         >>> Some(5).and_(Nothing())
         Nothing()
@@ -561,9 +536,8 @@ class Nothing(_MaybeInternal[ValueT]):
         return Nothing()
 
     def and_then(self, func: t.Callable[[ValueT], Maybe[OutT]]) -> Maybe[OutT]:
-        """
-        Returns the result of calling `func` with the wrapped value if `Some`
-        else `Nothing`
+        """Returns the result of calling `func` with the wrapped value if `Some`
+        else `Nothing`.
 
         >>> Some(5).and_then(lambda x: Some(str(x + 10)))
         Some('15')
@@ -574,9 +548,8 @@ class Nothing(_MaybeInternal[ValueT]):
         return Nothing()
 
     def and_then_opt(self, func: t.Callable[[ValueT], OutT | None]) -> Maybe[OutT]:
-        """
-        Same as `and_then` but `func` returns `value | None` which gets wrapped
-        to `Maybe` through `as_maybe`
+        """Same as `and_then` but `func` returns `value | None` which gets wrapped
+        to `Maybe` through `as_maybe`.
 
         >>> Some("key1").and_then_opt(lambda k: {"key1": "value1"}.get(k))
         Some('value1')
@@ -598,8 +571,7 @@ class Nothing(_MaybeInternal[ValueT]):
         ...
 
     def get(self: Maybe[t.Any], key: t.Any) -> Maybe[T] | Maybe[T2]:
-        """
-        Tries to get the values assigned to `key` in the wrapped sequence
+        """Tries to get the values assigned to `key` in the wrapped sequence.
 
         >>> Some([1, 2, 3]).get(1)
         Some(2)
@@ -619,8 +591,7 @@ class Nothing(_MaybeInternal[ValueT]):
         return Nothing()
 
     def filter(self, predicate: t.Callable[[ValueT], bool]) -> Maybe[ValueT]:
-        """
-        Checks if `Some` and the wrapped value passes the `predicate`
+        """Checks if `Some` and the wrapped value passes the `predicate`.
 
         >>> Some(5).filter(lambda x: x > 2)
         Some(5)
@@ -634,8 +605,7 @@ class Nothing(_MaybeInternal[ValueT]):
         return Nothing()
 
     def or_(self, mayb: Maybe[ValueT] | t.Callable[[], Maybe[ValueT]]) -> Maybe[ValueT]:
-        """
-        Return value if `Some` otherwise returns `mayb`
+        """Return value if `Some` otherwise returns `mayb`.
 
         >>> Some(5).or_(Some(6))
         Some(5)
@@ -649,8 +619,7 @@ class Nothing(_MaybeInternal[ValueT]):
         return mayb() if callable(mayb) else mayb
 
     def xor(self, mayb: Maybe[ValueT]) -> Maybe[ValueT]:
-        """
-        Checks if exactly one of the `Maybe`s are `Some`
+        """Checks if exactly one of the `Maybe`s are `Some`.
 
         >>> Some(5).xor(Some(6))
         Nothing()
@@ -703,8 +672,7 @@ class Nothing(_MaybeInternal[ValueT]):
         ...
 
     def zip(self, *maybs: Maybe[t.Any]) -> Maybe[tuple[t.Any, ...]]:
-        """
-        Zips the `Maybe` with several other `Maybe`s if they are all `Some`
+        """Zips the `Maybe` with several other `Maybe`s if they are all `Some`.
 
         >>> Some(5).zip(Some(6))
         Some((5, 6))
@@ -775,9 +743,8 @@ class Nothing(_MaybeInternal[ValueT]):
     def zip_with(
         self, func: t.Callable[..., OutT], *maybs: Maybe[t.Any]
     ) -> Maybe[OutT]:
-        """
-        Like `zip` but passes all the unwrapped values in `func` instead of
-        building a tuple with them
+        """Like `zip` but passes all the unwrapped values in `func` instead of
+        building a tuple with them.
 
         >>> def merge_dicts(d1: dict, d2: dict) -> dict:
         ...     return d1 | d2
@@ -791,8 +758,7 @@ class Nothing(_MaybeInternal[ValueT]):
         return Nothing()
 
     def unzip(self: Maybe[tuple[T, T2]]) -> tuple[Maybe[T], Maybe[T2]]:
-        """
-        Turns a `Maybe tuple` into a `tuple` of `Maybe`s
+        """Turns a `Maybe tuple` into a `tuple` of `Maybe`s.
 
         >>> Some((1, 2)).unzip()
         (Some(1), Some(2))
@@ -803,8 +769,7 @@ class Nothing(_MaybeInternal[ValueT]):
         return (Nothing(), Nothing())
 
     def ok_or(self, err: T | t.Callable[[], T]) -> result.Result[ValueT, T]:
-        """
-        Convert `Maybe` to `Result`
+        """Convert `Maybe` to `Result`.
 
         >>> Some(5).ok_or("bad value")
         Ok(5)
@@ -835,9 +800,8 @@ def from_maybe(
 def from_maybe(
     maybe_value: Maybe[ValueT], *, default: t.Callable[[], T] | T | None = None
 ) -> ValueT | T | None:
-    """
-    Unwraps the value in a `Maybe`
-    `Nothing` returns `None` unless `default` is specified
+    """Unwraps the value in a `Maybe`
+    `Nothing` returns `None` unless `default` is specified.
 
     >>> from_maybe(Some(5))
     5
@@ -866,8 +830,7 @@ def from_maybe(
 
 
 def as_maybe(value: ValueT | None) -> Maybe[ValueT]:
-    """
-    Wraps a value in `Maybe`
+    """Wraps a value in `Maybe`.
 
     >>> as_maybe(5)
     Some(5)
@@ -891,8 +854,7 @@ def as_maybe_flat(value: ValueT | None) -> Maybe[ValueT]:
 
 
 def as_maybe_flat(value: Maybe[ValueT] | ValueT | None) -> Maybe[ValueT]:
-    """
-    Like `as_maybe` but if `value` is already a `Maybe` it returns it as is.
+    """Like `as_maybe` but if `value` is already a `Maybe` it returns it as is.
 
     >>> as_maybe_flat(5)
     Some(5)
@@ -906,14 +868,13 @@ def as_maybe_flat(value: Maybe[ValueT] | ValueT | None) -> Maybe[ValueT]:
     >>> as_maybe_flat(Some(5))
     Some(5)
     """
-    if isinstance(value, (Some, Nothing)):
+    if isinstance(value, Some | Nothing):
         return t.cast(Maybe[ValueT], value)
     return as_maybe(value)
 
 
 def is_nothing(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Nothing[ValueT]]:
-    """
-    Checks if a maybe value is `Nothing`
+    """Checks if a maybe value is `Nothing`.
 
     >>> is_nothing(Some(5))
     False
@@ -925,8 +886,7 @@ def is_nothing(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Nothing[ValueT]]:
 
 
 def is_some(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Some[ValueT]]:
-    """
-    Checks if a maybe value is `Some`
+    """Checks if a maybe value is `Some`.
 
     >>> is_some(Some(5))
     True
@@ -938,8 +898,7 @@ def is_some(maybe_value: Maybe[ValueT]) -> t.TypeGuard[Some[ValueT]]:
 
 
 def is_maybe(value: t.Any) -> t.TypeGuard[Maybe[t.Any]]:
-    """
-    Checks if a value is `Maybe`, either `Some` or `Nothing`
+    """Checks if a value is `Maybe`, either `Some` or `Nothing`.
 
     >>> is_maybe(Some(5))
     True
@@ -950,7 +909,7 @@ def is_maybe(value: t.Any) -> t.TypeGuard[Maybe[t.Any]]:
     >>> is_maybe(5)
     False
     """
-    return isinstance(value, (Some, Nothing))
+    return isinstance(value, Some | Nothing)
 
 
 @t.overload
@@ -964,10 +923,9 @@ def maybe_get(some_seq: t.Mapping[T, T2], key: T) -> Maybe[T2]:
 
 
 def maybe_get(some_seq: t.Any, key: t.Any) -> Maybe[T] | Maybe[T2]:
-    """
-    Tries to get a value from the sequence returning a `Maybe`
+    """Tries to get a value from the sequence returning a `Maybe`
     `Nothing` if the value doesn't exist in the sequence
-    otherwise the value wrapped in `Some`
+    otherwise the value wrapped in `Some`.
 
     >>> maybe_get([1, 2, 3], 1)
     Some(2)
@@ -988,10 +946,9 @@ def maybe_get(some_seq: t.Any, key: t.Any) -> Maybe[T] | Maybe[T2]:
 
 
 def sequence(mayb_iter: t.Iterable[Maybe[T]]) -> Maybe[list[T]]:
-    """
-    Turns an iterable of `Maybe`s into a `Maybe` list
+    """Turns an iterable of `Maybe`s into a `Maybe` list
     This returns `Nothing` if any of the values are `Nothing`
-    See `cat_maybes` for a version that ignores `Nothing`s
+    See `cat_maybes` for a version that ignores `Nothing`s.
 
     >>> sequence([Some(1), Some(2), Some(3)])
     Some([1, 2, 3])
@@ -1016,8 +973,7 @@ def sequence(mayb_iter: t.Iterable[Maybe[T]]) -> Maybe[list[T]]:
 
 
 def maybe_next(it: t.Iterable[T]) -> Maybe[T]:
-    """
-    Returns the next element in the iterable if any, wrapped in `Maybe`
+    """Returns the next element in the iterable if any, wrapped in `Maybe`.
 
     >>> maybe_next([1, 2, 3])
     Some(1)
@@ -1032,14 +988,14 @@ def maybe_next(it: t.Iterable[T]) -> Maybe[T]:
     Nothing()
     """
     try:
-        return Some(next((i for i in it)))
+        return Some(next(i for i in it))
     except StopIteration:
         return Nothing()
 
 
 def maybe_apply(func: t.Callable[[T], T2], mayb: Maybe[T], default: T2) -> T2:
-    """
-    Applies a function to the value in `Maybe` if it exists, otherwise returns `default`
+    """Applies a function to the value in `Maybe` if it exists,
+    otherwise returns `default`.
 
     >>> maybe_apply(lambda x: x + 1, Some(5), 0)
     6
@@ -1055,8 +1011,7 @@ def maybe_apply(func: t.Callable[[T], T2], mayb: Maybe[T], default: T2) -> T2:
 
 
 def cat_maybes(lst: list[Maybe[T]]) -> list[T]:
-    """
-    Returns a list of all the `Some` values in the list of `Maybe`s
+    """Returns a list of all the `Some` values in the list of `Maybe`s.
 
     >>> cat_maybes([Some(1), Some(2), Some(3)])
     [1, 2, 3]
@@ -1071,8 +1026,7 @@ def cat_maybes(lst: list[Maybe[T]]) -> list[T]:
 
 
 def map_maybe(func: t.Callable[[T], Maybe[T2]], lst: list[T]) -> list[T2]:
-    """
-    Maps a function returning `Maybe`s over a list,
+    """Maps a function returning `Maybe`s over a list,
     returning a list of the `Some` results.
 
     >>> map_maybe(lambda x: Some(x + 1), [1, 2, 3])
@@ -1091,8 +1045,7 @@ def map_maybe(func: t.Callable[[T], Maybe[T2]], lst: list[T]) -> list[T2]:
 
 
 def maybe_wrapped(func: t.Callable[P, T | None]) -> t.Callable[P, Maybe[T]]:
-    """
-    Decorator that wraps the optional result of the decorated function in `Maybe`.
+    """Decorator that wraps the optional result of the decorated function in `Maybe`.
     `Some(value)` or `Nothing()` if the function returns `None`.
 
     >>> @maybe_wrapped

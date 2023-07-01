@@ -11,17 +11,16 @@ python = "^3.10"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
-isort = "*"
-flake8 = "*"
 poethepoet = "*"
 pytest = "*"
 pydantic = "*"
+ruff = "^0.0.275"
 
 [tool.pyright]
 strict = ["**/*"]
 
-[tool.isort]
-profile = "black"
+[tool.ruff]
+extend-select = ["Q", "RUF", "C90", "UP", "I"]
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
@@ -29,15 +28,15 @@ addopts = "--doctest-modules"
 [tool.poe.tasks]
 fmt = [
     { cmd = "black ." },
-    { cmd = "isort ." }
+    { cmd = "ruff check . --fix" }
 ]
 uniform_docstrings = [
     { script = "scripts.uniform_docstrings:main" },
     { ref = "fmt" }
 ]
-lint = "flake8 ."
+lint = "ruff check ."
 check_type = "pyright"
-check_fmt = [{ cmd = "black --check ." }, { cmd = "isort --check ." }]
+check_fmt = "black --check ."
 test = "pytest -vv"
 check = ["lint", "check_fmt", "check_type", "test"]
 

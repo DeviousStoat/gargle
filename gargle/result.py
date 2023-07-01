@@ -20,8 +20,7 @@ class UnwrapError(Exception):
 
 class _ResultInternal(t.Generic[OkT, ErrT]):
     def unwrap(self, exc: type[Exception] | None = None) -> OkT:
-        """
-        Unwrap the value in `Result`.
+        """Unwrap the value in `Result`.
         Returning the value inside if `Ok else raising an exception.
 
         Exception used is `UnwrapError` unless other specified in `exc`.
@@ -43,9 +42,8 @@ class _ResultInternal(t.Generic[OkT, ErrT]):
                 raise UnwrapError(err)
 
     def unwrap_or(self, default: OkT | t.Callable[[], OkT]) -> OkT:
-        """
-        Unwrap the value in `Result`.
-        Returning the value inside if `Ok otherwise the `default`
+        """Unwrap the value in `Result`.
+        Returning the value inside if `Ok otherwise the `default`.
 
         >>> Ok(5).unwrap_or(10)
         5
@@ -71,8 +69,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return self._value == value
 
     def unwrap_raise(self: Result[OkT, Exception]) -> OkT:
-        """
-        Like `unwrap` but `Err` value needs to be an exception and it will be raised
+        """Like `unwrap` but `Err` value needs to be an exception and it will be raised.
 
         >>> Ok(5).unwrap_raise()
         5
@@ -85,8 +82,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return t.cast(Ok[OkT, ErrT], self)._value
 
     def map(self, func: t.Callable[[OkT], OutT]) -> Result[OutT, ErrT]:
-        """
-        Calls the `func` with the value wrapped in `Result` if `Ok`
+        """Calls the `func` with the value wrapped in `Result` if `Ok`.
 
         >>> Ok(5).map(lambda x: x + 1)
         Ok(6)
@@ -99,9 +95,8 @@ class Ok(_ResultInternal[OkT, ErrT]):
     def map_or(
         self, func: t.Callable[[OkT], OutT], *, default: OutT | t.Callable[[], OutT]
     ) -> OutT:
-        """
-        Calls the `func` with the value wrapped in `Result` if `Ok`
-        returning the unwrapped value else return `default`
+        """Calls the `func` with the value wrapped in `Result` if `Ok`
+        returning the unwrapped value else return `default`.
 
         >>> Ok(5).map_or(lambda x: x + 1, default=10)
         6
@@ -115,8 +110,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return func(self._value)
 
     def map_err(self, func: t.Callable[[ErrT], OutT]) -> Result[OkT, OutT]:
-        """
-        Like `map` but acts on the value in `Err`
+        """Like `map` but acts on the value in `Err`.
 
         >>> Ok(5).map_err(lambda s: s.upper())
         Ok(5)
@@ -127,8 +121,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return Ok(self._value)
 
     def and_(self, res: Result[OkT, ErrT]) -> Result[OkT, ErrT]:
-        """
-        Returns `Err` if the value is `Err` else returns `res`
+        """Returns `Err` if the value is `Err` else returns `res`.
 
         >>> Ok(5).and_(Err("bad value"))
         Err('bad value')
@@ -144,9 +137,8 @@ class Ok(_ResultInternal[OkT, ErrT]):
     def and_then(
         self, func: t.Callable[[OkT], Result[OutT, ErrT]]
     ) -> Result[OutT, ErrT]:
-        """
-        Returns the result of calling `func` with the wrapped value if `Ok`
-        else return the `Err`
+        """Returns the result of calling `func` with the wrapped value if `Ok`
+        else return the `Err`.
 
         >>> Ok(5).and_then(lambda x: Ok(str(x + 10)))
         Ok('15')
@@ -159,8 +151,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
     def or_(
         self, res: Result[OkT, ErrT] | t.Callable[[], Result[OkT, ErrT]]
     ) -> Result[OkT, ErrT]:
-        """
-        Return value if `Ok` otherwise returns `res`
+        """Return value if `Ok` otherwise returns `res`.
 
         >>> Ok(5).or_(Ok(6))
         Ok(5)
@@ -174,8 +165,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return Ok(self._value)
 
     def ok(self) -> maybe.Maybe[OkT]:
-        """
-        Converts `Result` to `Maybe`, keeping `Ok` value
+        """Converts `Result` to `Maybe`, keeping `Ok` value.
 
         >>> Ok(5).ok()
         Some(5)
@@ -186,8 +176,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return maybe.Some(self._value)
 
     def err(self) -> maybe.Maybe[ErrT]:
-        """
-        Converts `Result` to `Maybe`, keeping the `Err` value
+        """Converts `Result` to `Maybe`, keeping the `Err` value.
 
         >>> Ok(5).err()
         Nothing()
@@ -200,8 +189,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
     def either(
         self, ok_func: t.Callable[[OkT], OutT], err_func: t.Callable[[ErrT], OutT]
     ) -> OutT:
-        """
-        Either call `ok_func` with value if `Ok` else `err_func` with error value
+        """Either call `ok_func` with value if `Ok` else `err_func` with error value.
 
         >>> Ok(5).either(lambda x: x + 1, lambda s: s.upper())
         6
@@ -214,8 +202,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
     def filter_or(
         self, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[], ErrT]
     ) -> Result[OkT, ErrT]:
-        """
-        Checks if the `Ok` value passes the `predicate`. If not returns an `Err`
+        """Checks if the `Ok` value passes the `predicate`. If not returns an `Err`
         containing `err` value.
 
         >>> Ok(5).filter_or(lambda x: x > 3, "lower than 3")
@@ -234,8 +221,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         )
 
     def is_ok(self) -> bool:
-        """
-        Checks if the value is `Ok`
+        """Checks if the value is `Ok`.
 
         >>> Ok(5).is_ok()
         True
@@ -246,8 +232,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return True
 
     def is_err(self) -> bool:
-        """
-        Checks if the value is `Err`
+        """Checks if the value is `Err`.
 
         >>> Ok(5).is_err()
         False
@@ -258,8 +243,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return False
 
     def is_ok_and(self, predicate: t.Callable[[OkT], bool]) -> bool:
-        """
-        Checks if the value is `Ok` and passes the `predicate`
+        """Checks if the value is `Ok` and passes the `predicate`.
 
         >>> Ok(5).is_ok_and(lambda value: value == 5)
         True
@@ -273,8 +257,7 @@ class Ok(_ResultInternal[OkT, ErrT]):
         return predicate(self._value)
 
     def is_err_and(self, predicate: t.Callable[[ErrT], bool]) -> bool:
-        """
-        Checks if the value is `Err` and passes the `predicate`
+        """Checks if the value is `Err` and passes the `predicate`.
 
         >>> Ok(5).is_err_and(lambda value: value == "bad value")
         False
@@ -299,8 +282,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return self._value == value
 
     def unwrap_raise(self: Result[OkT, Exception]) -> OkT:
-        """
-        Like `unwrap` but `Err` value needs to be an exception and it will be raised
+        """Like `unwrap` but `Err` value needs to be an exception and it will be raised.
 
         >>> Ok(5).unwrap_raise()
         5
@@ -313,8 +295,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         raise t.cast(Err[OkT, Exception], self)._value
 
     def map(self, func: t.Callable[[OkT], OutT]) -> Result[OutT, ErrT]:
-        """
-        Calls the `func` with the value wrapped in `Result` if `Ok`
+        """Calls the `func` with the value wrapped in `Result` if `Ok`.
 
         >>> Ok(5).map(lambda x: x + 1)
         Ok(6)
@@ -327,9 +308,8 @@ class Err(_ResultInternal[OkT, ErrT]):
     def map_or(
         self, func: t.Callable[[OkT], OutT], *, default: OutT | t.Callable[[], OutT]
     ) -> OutT:
-        """
-        Calls the `func` with the value wrapped in `Result` if `Ok`
-        returning the unwrapped value else return `default`
+        """Calls the `func` with the value wrapped in `Result` if `Ok`
+        returning the unwrapped value else return `default`.
 
         >>> Ok(5).map_or(lambda x: x + 1, default=10)
         6
@@ -343,8 +323,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return default() if callable(default) else default
 
     def map_err(self, func: t.Callable[[ErrT], OutT]) -> Result[OkT, OutT]:
-        """
-        Like `map` but acts on the value in `Err`
+        """Like `map` but acts on the value in `Err`.
 
         >>> Ok(5).map_err(lambda s: s.upper())
         Ok(5)
@@ -355,8 +334,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return Err(func(self._value))
 
     def and_(self, res: Result[OkT, ErrT]) -> Result[OkT, ErrT]:
-        """
-        Returns `Err` if the value is `Err` else returns `res`
+        """Returns `Err` if the value is `Err` else returns `res`.
 
         >>> Ok(5).and_(Err("bad value"))
         Err('bad value')
@@ -372,9 +350,8 @@ class Err(_ResultInternal[OkT, ErrT]):
     def and_then(
         self, func: t.Callable[[OkT], Result[OutT, ErrT]]
     ) -> Result[OutT, ErrT]:
-        """
-        Returns the result of calling `func` with the wrapped value if `Ok`
-        else return the `Err`
+        """Returns the result of calling `func` with the wrapped value if `Ok`
+        else return the `Err`.
 
         >>> Ok(5).and_then(lambda x: Ok(str(x + 10)))
         Ok('15')
@@ -387,8 +364,7 @@ class Err(_ResultInternal[OkT, ErrT]):
     def or_(
         self, res: Result[OkT, ErrT] | t.Callable[[], Result[OkT, ErrT]]
     ) -> Result[OkT, ErrT]:
-        """
-        Return value if `Ok` otherwise returns `res`
+        """Return value if `Ok` otherwise returns `res`.
 
         >>> Ok(5).or_(Ok(6))
         Ok(5)
@@ -402,8 +378,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return res() if callable(res) else res
 
     def ok(self) -> maybe.Maybe[OkT]:
-        """
-        Converts `Result` to `Maybe`, keeping `Ok` value
+        """Converts `Result` to `Maybe`, keeping `Ok` value.
 
         >>> Ok(5).ok()
         Some(5)
@@ -414,8 +389,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return maybe.Nothing()
 
     def err(self) -> maybe.Maybe[ErrT]:
-        """
-        Converts `Result` to `Maybe`, keeping the `Err` value
+        """Converts `Result` to `Maybe`, keeping the `Err` value.
 
         >>> Ok(5).err()
         Nothing()
@@ -428,8 +402,7 @@ class Err(_ResultInternal[OkT, ErrT]):
     def either(
         self, ok_func: t.Callable[[OkT], OutT], err_func: t.Callable[[ErrT], OutT]
     ) -> OutT:
-        """
-        Either call `ok_func` with value if `Ok` else `err_func` with error value
+        """Either call `ok_func` with value if `Ok` else `err_func` with error value.
 
         >>> Ok(5).either(lambda x: x + 1, lambda s: s.upper())
         6
@@ -442,8 +415,7 @@ class Err(_ResultInternal[OkT, ErrT]):
     def filter_or(
         self, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[], ErrT]
     ) -> Result[OkT, ErrT]:
-        """
-        Checks if the `Ok` value passes the `predicate`. If not returns an `Err`
+        """Checks if the `Ok` value passes the `predicate`. If not returns an `Err`
         containing `err` value.
 
         >>> Ok(5).filter_or(lambda x: x > 3, "lower than 3")
@@ -458,8 +430,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return Err(self._value)
 
     def is_ok(self) -> bool:
-        """
-        Checks if the value is `Ok`
+        """Checks if the value is `Ok`.
 
         >>> Ok(5).is_ok()
         True
@@ -470,8 +441,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return False
 
     def is_err(self) -> bool:
-        """
-        Checks if the value is `Err`
+        """Checks if the value is `Err`.
 
         >>> Ok(5).is_err()
         False
@@ -482,8 +452,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return True
 
     def is_ok_and(self, predicate: t.Callable[[OkT], bool]) -> bool:
-        """
-        Checks if the value is `Ok` and passes the `predicate`
+        """Checks if the value is `Ok` and passes the `predicate`.
 
         >>> Ok(5).is_ok_and(lambda value: value == 5)
         True
@@ -497,8 +466,7 @@ class Err(_ResultInternal[OkT, ErrT]):
         return False
 
     def is_err_and(self, predicate: t.Callable[[ErrT], bool]) -> bool:
-        """
-        Checks if the value is `Err` and passes the `predicate`
+        """Checks if the value is `Err` and passes the `predicate`.
 
         >>> Ok(5).is_err_and(lambda value: value == "bad value")
         False
@@ -529,9 +497,8 @@ def result_wrapped(func: t.Callable[P, OutT]) -> t.Callable[P, Result[OutT, Exce
 
 
 def result_wrapped(func: t.Callable[P, t.Any]) -> t.Callable[P, Result[t.Any, t.Any]]:
-    """
-    Decorator that wraps the result of the decorated function in `Result`.
-    Catching any exception and storing it in `Err`
+    """Decorator that wraps the result of the decorated function in `Result`.
+    Catching any exception and storing it in `Err`.
 
     If the decorated function already returns a `Result`, the returned value won't
     be wrapped again.
@@ -572,7 +539,7 @@ def result_wrapped(func: t.Callable[P, t.Any]) -> t.Callable[P, Result[t.Any, t.
             res = func(*args, **kwargs)
             return (
                 t.cast(Ok[t.Any, t.Any] | Err[t.Any, t.Any], res)
-                if isinstance(res, (Ok, Err))
+                if isinstance(res, Ok | Err)
                 else Ok(res)
             )
         except Exception as exc:
@@ -598,8 +565,7 @@ def result_wrapped_for(
 def result_wrapped_for(
     excs_to_catch: type[Exception] | tuple[type[Exception], ...]
 ) -> t.Callable[[t.Callable[P, OutT]], t.Callable[P, Result[OutT, Exception]]]:
-    """
-    Like `result_wrapped` but you can specify an exception type or
+    """Like `result_wrapped` but you can specify an exception type or
     a tuple of exception types to catch.
     The others will be ignored and raised normally.
 
@@ -639,8 +605,7 @@ def result_wrapped_for(
 def filter_to_result(
     value: OkT, predicate: t.Callable[[OkT], bool], err: ErrT | t.Callable[[OkT], ErrT]
 ) -> Result[OkT, ErrT]:
-    """
-    Checks if the `value` passes the `predicate`.
+    """Checks if the `value` passes the `predicate`.
     If it does wrap it in `Ok` otherwise returns an `Err` containing `err` value.
 
     >>> filter_to_result(5, lambda x: x > 3, "lower than 3")

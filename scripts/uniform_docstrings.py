@@ -1,6 +1,4 @@
-"""
-Sets the same docstrings on several classes with the same methods.
-"""
+"""Sets the same docstrings on several classes with the same methods."""
 
 import ast
 import typing as t
