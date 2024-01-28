@@ -1,11 +1,15 @@
 # pyright: reportPrivateUsage=false
+# pyright: reportPossiblyUnboundVariable=false
 
 from __future__ import annotations
 
 import functools
-import importlib.util
 import typing as t
 from dataclasses import dataclass
+
+from pydantic import BeforeValidator, GetCoreSchemaHandler
+from pydantic_core import core_schema
+from pydantic_core.core_schema import CoreSchema
 
 from gargle import result
 
@@ -39,36 +43,23 @@ P = t.ParamSpec("P")
 class _MaybeInternal(t.Generic[ValueT]):
     """Internal class gathering common methods for the maybe classes."""
 
-    if importlib.util.find_spec("pydantic") is not None:
-        from pydantic.fields import ModelField
+    # if importlib.util.find_spec("pydantic") is not None:
 
-        @classmethod
-        def __get_validators__(
-            cls,
-        ) -> t.Iterable[t.Callable[[t.Any, t.Any], Maybe[ValueT]]]:
-            """Yields validator for pydantic."""
-            yield cls._pydantic_validate
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: t.Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        args = t.get_args(source_type)
+        wrapped_value_schema = handler.generate_schema(args[0] if args else t.Any)
 
-        @classmethod
-        def _pydantic_validate(cls, value: t.Any, field: ModelField) -> Maybe[ValueT]:
-            from pydantic import ValidationError
-
-            value = as_maybe_flat(value)
-
-            if not field.sub_fields or value.is_nothing():
-                return value
-
-            sub_field = field.sub_fields[0]
-            valid_value, error = sub_field.validate(value._value, {}, loc="maybe_value")
-            if error:
-                # quick hack to avoid raising 2 validation errors
-                # the validation will be called for both class of the `Maybe` union
-                # (`Some` and `Nothing`) and we want to raise only one error
-                errors = [error] if field.type_ is Some else []
-
-                raise ValidationError(errors, t.cast(t.Any, cls))
-
-            return as_maybe(valid_value)
+        return core_schema.json_or_python_schema(
+            python_schema=core_schema.chain_schema(
+                [core_schema.is_instance_schema(cls), wrapped_value_schema],
+            ),
+            json_schema=core_schema.chain_schema(
+                [core_schema.is_instance_schema(cls), wrapped_value_schema],
+            ),
+        )
 
     @t.overload
     def from_maybe(self, *, default: t.Callable[[], T] | T) -> ValueT | T:
@@ -1067,38 +1058,7 @@ def maybe_wrapped(func: t.Callable[P, T | None]) -> t.Callable[P, Maybe[T]]:
     return wrapper
 
 
-if importlib.util.find_spec("pydantic") is not None:
-    from pydantic import Field, validator  # type: ignore
-    from pydantic.main import ModelMetaclass
+# if importlib.util.find_spec("pydantic") is not None:
+# from pydantic.functional_validators import BeforeValidator
 
-    def _is_maybe_type(tp: t.Any) -> bool:
-        return hasattr(tp, "__args__") and tuple(
-            tp_arg.__origin__ for tp_arg in tp.__args__
-        ) == (Some, Nothing)
-
-    @t.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
-    class OptionalAsMaybe(ModelMetaclass):
-        def __new__(
-            cls,
-            name: str,
-            bases: tuple[type],
-            namespaces: dict[str, t.Any],
-            **kwargs: t.Any,
-        ) -> t.Any:
-            annotations = namespaces.get("__annotations__", {})
-            for base in bases:
-                annotations.update(base.__annotations__)
-
-            maybe_fields = [
-                field
-                for field, tp in annotations.items()
-                if not field.startswith("__") and _is_maybe_type(tp)
-            ]
-
-            namespaces["_gargle_optional_as_maybe_validator"] = validator(
-                *maybe_fields, pre=True, always=True, allow_reuse=True
-            )(lambda v: Nothing() if v is None else v)
-
-            return super().__new__(  # type: ignore
-                cls, name, bases, namespaces, **kwargs
-            )
+MaybeFromOptional = t.Annotated[Maybe[T], BeforeValidator(as_maybe)]

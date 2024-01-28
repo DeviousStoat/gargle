@@ -1,27 +1,27 @@
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from gargle.maybe import Maybe, Nothing, OptionalAsMaybe, Some, is_some
+from gargle.maybe import MaybeFromOptional, Nothing, Some, is_some
 
 
-class Model1(BaseModel, metaclass=OptionalAsMaybe):
-    s: Maybe[str]
-    x: Maybe[int]
+class Model1(BaseModel):
+    s: MaybeFromOptional[str]
+    x: MaybeFromOptional[int]
 
 
-class Model2(BaseModel, metaclass=OptionalAsMaybe):
-    model1: Maybe[Model1]
+class Model2(BaseModel):
+    model1: MaybeFromOptional[Model1]
 
 
 class TestMaybePydantic:
     def test_regular_build(self):
-        m = Model1(s=Some("hello"), x=Nothing())
+        m = Model1(s=Some("hello"), x=Nothing[int]())
 
         assert m.s == Some("hello")
         assert m.x == Nothing()
 
     def test_nested(self):
-        m = Model2(model1=Some(Model1(s=Some("hello"), x=Nothing())))
+        m = Model2(model1=Some(Model1(s=Some("hello"), x=Nothing[int]())))
 
         assert m.model1.and_then(lambda m1: m1.s) == Some("hello")
         assert m.model1.and_then(lambda m1: m1.x) == Nothing()

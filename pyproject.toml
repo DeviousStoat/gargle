@@ -13,6 +13,7 @@ python = "^3.10"
 poethepoet = "*"
 pytest = "*"
 pydantic = "*"
+pydantic_core = "*"
 ruff = "*"
 
 [tool.pyright]

@@ -37,7 +37,7 @@ class ClassModifier(ast.NodeTransformer):
         if not (docstring_content := ast.get_docstring(with_docstring, clean=False)):
             return node
 
-        docstring = ast.Expr(value=ast.Str(s=docstring_content))
+        docstring = ast.Expr(value=ast.Constant(s=docstring_content))
 
         current_docstring = ast.get_docstring(node, clean=False)
         if current_docstring:
