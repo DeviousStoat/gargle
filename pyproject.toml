@@ -10,11 +10,10 @@ readme = "README.md"
 python = "^3.10"
 
 [tool.poetry.group.dev.dependencies]
-black = "*"
 poethepoet = "*"
 pytest = "*"
 pydantic = "*"
-ruff = "^0.0.275"
+ruff = "*"
 
 [tool.pyright]
 strict = ["**/*"]
@@ -27,7 +26,7 @@ addopts = "--doctest-modules"
 
 [tool.poe.tasks]
 fmt = [
-    { cmd = "black ." },
+    { cmd = "ruff format ." },
     { cmd = "ruff check . --fix" }
 ]
 uniform_docstrings = [
@@ -36,7 +35,7 @@ uniform_docstrings = [
 ]
 lint = "ruff check ."
 check_type = "pyright"
-check_fmt = "black --check ."
+check_fmt = "ruff format --check ."
 test = "pytest -vv"
 check = ["lint", "check_fmt", "check_type", "test"]
 

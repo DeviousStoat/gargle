@@ -486,7 +486,7 @@ Result = Ok[OkT, ErrT] | Err[OkT, ErrT]
 # TODO: check type ignore for overlapping overloads
 @t.overload
 def result_wrapped(  # type: ignore[misc]
-    func: t.Callable[P, Result[OutT, ErrT]]
+    func: t.Callable[P, Result[OutT, ErrT]],
 ) -> t.Callable[P, Result[OutT, ErrT | Exception]]:
     ...
 
@@ -557,13 +557,13 @@ def result_wrapped_for(
 
 @t.overload
 def result_wrapped_for(
-    excs_to_catch: tuple[type[Exception], ...]
+    excs_to_catch: tuple[type[Exception], ...],
 ) -> t.Callable[[t.Callable[P, OutT]], t.Callable[P, Result[OutT, Exception]]]:
     ...
 
 
 def result_wrapped_for(
-    excs_to_catch: type[Exception] | tuple[type[Exception], ...]
+    excs_to_catch: type[Exception] | tuple[type[Exception], ...],
 ) -> t.Callable[[t.Callable[P, OutT]], t.Callable[P, Result[OutT, Exception]]]:
     """Like `result_wrapped` but you can specify an exception type or
     a tuple of exception types to catch.
